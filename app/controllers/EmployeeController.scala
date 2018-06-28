@@ -41,14 +41,14 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
       },
       // There were no errors in the from, so create the person.
       employeeForm => {
-        repo.create(employeeForm).map { message =>
-          Created(message)
+        repo.create(employeeForm).map { employee =>
+          Created(Json.toJson(employee)).withHeaders("status" -> "employee created successfully")
         }
       }
     )
   }
 
-  def getAll = Action.async { _ =>
+  def getAll: Action[AnyContent] = Action.async { _ =>
     repo.getAll.map { employees =>
       Ok(Json.toJson(employees))
     }

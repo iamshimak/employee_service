@@ -13,6 +13,7 @@ scalaVersion := "2.12.2"
 libraryDependencies ++= Seq( ehcache , ws , specs2 % Test , guice )
 libraryDependencies += "com.typesafe.play" %% "play-slick" % "3.0.0"
 libraryDependencies += "mysql" % "mysql-connector-java" % "5.1.38"
+libraryDependencies += "org.postgresql" % "postgresql" % "9.4-1201-jdbc41"
 
 libraryDependencies ++= Seq(
   "com.typesafe.play" %% "play-slick" % "3.0.0",

@@ -10,28 +10,6 @@ import scala.concurrent.{ExecutionContext, Future}
 
 @Singleton
 class EmployeeRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(implicit ec: ExecutionContext) {
-
-  private var employeeList = List(
-    Employee(1, "Ahamed Shimak", Option("A"), "SE"),
-    Employee(2, "Atheek Razzik", None, "BC"),
-    Employee(3, "Nafath Nazeeh", Option("N"), "LW"),
-    Employee(4, "Sachin Randale", None, "PM")
-  )
-
-//  def create(name: String, prefix: Option[String], role: String): Option[Employee] = {
-//    val newID = employeeList.last.id + 1
-//    employeeList = employeeList :+ Employee(newID, name, prefix, role)
-//    get(newID)
-//  }
-//
-//  def get(id: Long): Option[Employee] = {
-//    employeeList.find(e => e.id == id)
-//  }
-//
-//  def getAll: List[Employee] = {
-//    employeeList
-//  }
-
   // We want the JdbcProfile for this provider
   private val dbConfig = dbConfigProvider.get[JdbcProfile]
 
@@ -67,24 +45,28 @@ class EmployeeRepository @Inject()(dbConfigProvider: DatabaseConfigProvider)(imp
 
   private val employees = TableQuery[EmployeeTable]
 
-  //TODO employee id should be auto-generated
-  def create(employeeForm: EmployeeCreateForm): Future[String] = {
-    val employee = Employee(999, employeeForm.name, employeeForm.prefix, employeeForm.role)
-    dbConfig.db.run(employees += employee).map( _ => "Employee successfully added").recover {
-      case ex: Exception => ex.getCause.getMessage
-    }
+  def create(employeeForm: EmployeeCreateForm): Future[Employee] = db.run {
+    // We create a projection of just the name and age columns, since we're not inserting a value for the id column
+    (employees.map(e => (e.name, e.prefix, e.role))
+      // Now define it to return the id, because we want to know what id was generated for the person
+      returning employees.map(_.id)
+      // And we define a transformation for the returned value, which combines our original parameters with the
+      // returned id
+      into ((nameAge, id) => Employee(id, nameAge._1, nameAge._2, nameAge._3))
+      // And finally, insert the person into the database
+      ) += (employeeForm.name, employeeForm.prefix, employeeForm.role)
   }
 
-  def delete(id: Long): Future[Int] = {
-    dbConfig.db.run(employees.filter(_.id === id).delete)
+  def delete(id: Long): Future[Int] = db.run {
+    employees.filter(_.id === id).delete
   }
 
-  def get(id: Long): Future[Option[Employee]] = {
-    dbConfig.db.run(employees.filter(_.id === id).result.headOption)
+  def get(id: Long): Future[Option[Employee]] = db.run {
+    employees.filter(_.id === id).result.headOption
   }
 
-  def getAll: Future[Seq[Employee]] = {
-    dbConfig.db.run(employees.result)
+  def getAll: Future[Seq[Employee]] = db.run {
+    employees.result
   }
 
 }

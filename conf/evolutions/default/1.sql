@@ -1,12 +1,12 @@
 # Employee schema
 
 # --- !Ups
-create table `employee` (
-  `id` BIGINT NOT NULL AUTO_INCREMENT PRIMARY KEY,
-  `name` TEXT NOT NULL,
-  `prefix` TEXT,
-  `role` BIGINT NOT NULL
+CREATE TABLE employee (
+  id SERIAL PRIMARY KEY,
+  name TEXT NOT NULL,
+  prefix TEXT,
+  role TEXT NOT NULL
 );
 
 # --- !Downs
-drop table `employee`
+DROP TABLE IF EXISTS employee
