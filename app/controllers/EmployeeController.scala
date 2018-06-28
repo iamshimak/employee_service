@@ -48,6 +48,13 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
     )
   }
 
+  def delete(id: Long): Action[AnyContent] = Action.async { _ =>
+    repo.delete(id).map { status =>
+      if (status == 0) NotFound("Employee Not Found")
+      else Ok("Success")
+    }
+  }
+
   def getAll: Action[AnyContent] = Action.async { _ =>
     repo.getAll.map { employees =>
       Ok(Json.toJson(employees))
