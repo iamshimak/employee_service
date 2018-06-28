@@ -6,7 +6,7 @@ import play.api.data.Form
 import play.api.data.Forms._
 import models.EmployeeRepository
 import play.api.libs.json.Json
-import play.api.mvc.{MessagesAbstractController, MessagesControllerComponents}
+import play.api.mvc.{Action, AnyContent, MessagesAbstractController, MessagesControllerComponents}
 
 import scala.concurrent.{ExecutionContext, Future}
 
@@ -24,29 +24,34 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
     )(EmployeeCreateForm.apply)(EmployeeCreateForm.unapply)
   }
 
-  def get(id: Long) = Action { request =>
-    repo.get(id) match {
-      case Some(employee) => Ok(Json.toJson(employee))
-      case None => NotFound
+  def get(id: Long): Action[AnyContent] = Action.async { _ =>
+    repo.get(id).map { employee =>
+      Ok(Json.toJson(employee))
     }
   }
 
-  def create = Action { implicit request =>
+  def create: Action[AnyContent] = Action.async { implicit request =>
+    // Bind the form first, then fold the result, passing a function to handle errors, and a function to handle succes.
     employeeForm.bindFromRequest.fold(
+      // The error function. We return the index page with the error form, which will render the errors.
+      // We also wrap the result in a successful future, since this action is synchronous, but we're required to return
+      // a future because the person creation function returns a future.
       errorForm => {
-        BadRequest(errorForm.errorsAsJson)
+        Future.successful(BadRequest(errorForm.errorsAsJson))
       },
-      employee => {
-        repo.create(employee.name, employee.prefix, employee.role) match {
-          case Some(e) => Created(Json.toJson(e))
-          case None => BadRequest("Could Not Create Employee")
+      // There were no errors in the from, so create the person.
+      employeeForm => {
+        repo.create(employeeForm).map { message =>
+          Created(message)
         }
       }
     )
   }
 
-  def getAll() = Action { request =>
-    Ok(Json.toJson(repo.getAll))
+  def getAll = Action.async { _ =>
+    repo.getAll.map { employees =>
+      Ok(Json.toJson(employees))
+    }
   }
 
 }
