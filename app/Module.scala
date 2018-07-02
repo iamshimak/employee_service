@@ -1,6 +1,8 @@
 import com.google.inject.AbstractModule
 import java.time.Clock
 
+import controllers.EmployeeController
+import repos.EmployeeRepository
 import services.{ApplicationTimer, AtomicCounter, Counter}
 
 /**

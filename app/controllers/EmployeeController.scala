@@ -4,17 +4,20 @@ import javax.inject.Inject
 
 import play.api.data.Form
 import play.api.data.Forms._
-import models.EmployeeRepository
 import play.api.libs.json.Json
 import play.api.mvc.{Action, AnyContent, MessagesAbstractController, MessagesControllerComponents}
 
+import models.Employee
+import repos.{EmployeeRepository, ReportRepository}
+
 import scala.concurrent.{ExecutionContext, Future}
 
-//TODO Make Repo & Controller Async
-class EmployeeController @Inject()(repo: EmployeeRepository,
-                                   cc: MessagesControllerComponents)
+class EmployeeController @Inject()(cc: MessagesControllerComponents)
                                   (implicit ec: ExecutionContext)
   extends MessagesAbstractController(cc) {
+
+  private val employeeRepo = new EmployeeRepository
+  private val reportRepo = new ReportRepository
 
   private val employeeForm: Form[EmployeeCreateForm] = Form {
     mapping(
@@ -25,8 +28,22 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
   }
 
   def get(id: Long): Action[AnyContent] = Action.async { _ =>
-    repo.get(id).map { employee =>
-      Ok(Json.toJson(employee))
+    employeeRepo.getById(id).map { result =>
+      result match {
+        case None => NotFound("")
+        case Some(e) => {
+          reportRepo.getByEmployeeId(e.id).map { reportResult =>
+            Ok(Json.obj(
+              "id" -> e.id,
+              "prefix" -> e.prefix,
+              "role" -> e.role,
+              "name" -> e.name,
+              "reports" -> Json.toJson(reportResult)
+            ))
+          }
+        }
+      }
+      Ok(Json.toJson(result))
     }
   }
 
@@ -41,7 +58,8 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
       },
       // There were no errors in the from, so create the person.
       employeeForm => {
-        repo.create(employeeForm).map { employee =>
+        val employee = Employee(0L, employeeForm.name, employeeForm.prefix, employeeForm.role)
+        employeeRepo.save(employee).map { employee =>
           Created(Json.toJson(employee)).withHeaders("status" -> "employee created successfully")
         }
       }
@@ -49,7 +67,7 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
   }
 
   def getAll: Action[AnyContent] = Action.async { _ =>
-    repo.getAll.map { employees =>
+    employeeRepo.getAll.map { employees =>
       Ok(Json.toJson(employees))
     }
   }
