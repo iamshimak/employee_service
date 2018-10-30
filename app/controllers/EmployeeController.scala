@@ -18,9 +18,9 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
 
   private val employeeForm: Form[EmployeeCreateForm] = Form {
     mapping(
-      "name" -> nonEmptyText,
-      "prefix" -> optional(text),
-      "role" -> nonEmptyText
+      "emp_name" -> nonEmptyText,
+      "emp_prefix" -> optional(text),
+      "emp_role" -> nonEmptyText
     )(EmployeeCreateForm.apply)(EmployeeCreateForm.unapply)
   }
 
@@ -39,7 +39,11 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
       errorForm => {
         Future.successful(BadRequest(errorForm.errorsAsJson))
       },
-      // There were no errors in the from, so create the person.
+      employee => {
+        repo.create(employee.name, employee.prefix, employee.role) match {
+          case Some(e) => Created(Json.toJson(e))
+          case None => BadRequest("Could Not Create Employee")
+
       employeeForm => {
         repo.create(employeeForm).map { employee =>
           Created(Json.toJson(employee)).withHeaders("status" -> "employee created successfully")
