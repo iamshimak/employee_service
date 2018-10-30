@@ -18,9 +18,9 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
 
   private val employeeForm: Form[EmployeeCreateForm] = Form {
     mapping(
-      "name" -> nonEmptyText,
-      "prefix" -> optional(text),
-      "role" -> nonEmptyText
+      "emp_name" -> nonEmptyText,
+      "emp_prefix" -> optional(text),
+      "emp_role" -> nonEmptyText
     )(EmployeeCreateForm.apply)(EmployeeCreateForm.unapply)
   }
 
