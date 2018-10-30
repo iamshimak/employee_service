@@ -39,7 +39,7 @@ class EmployeeController @Inject()(repo: EmployeeRepository,
       employee => {
         repo.create(employee.name, employee.prefix, employee.role) match {
           case Some(e) => Created(Json.toJson(e))
-          case None => BadRequest("Could Not Create new Employee")
+          case None => BadRequest("Could Not Create Employee")
         }
       }
     )
